@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1003.0704 277.856" width="1003.0704" height="277.856">
+  <defs>
+    
+    <linearGradient id="externiaBrand" x1="0" y1="0" x2="1003.0704" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFC12D"></stop>
+      <stop offset="0.28" stop-color="#F7A361"></stop>
+      <stop offset="0.55" stop-color="#EE847B"></stop>
+      <stop offset="0.80" stop-color="#DE3B84"></stop>
+      <stop offset="1" stop-color="#D6007D"></stop>
+    </linearGradient>
+  </defs>
+  <g transform="translate(30.00 32.72) scale(5.4464)" fill="url(#externiaBrand)">
+    <rect x="4" y="7" width="32" height="5"></rect>
+    <rect x="4" y="17" width="22" height="5"></rect>
+    <rect x="4" y="27" width="32" height="5"></rect>
+    <circle cx="33" cy="19.5" r="2.5"></circle>
+  </g>
+  <text x="254.07" y="192.43" font-family="Montserrat, &#39;Helvetica Neue&#39;, sans-serif" font-weight="600" font-size="200" fill="url(#externiaBrand)">xternia</text>
+</svg>
