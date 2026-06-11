@@ -175,14 +175,10 @@
     </div>
 
     <details class="styleguide">
-      <summary>Guía de estilo (opcional)</summary>
-      <p class="sector-hint">Sube un DESIGN.md o pega tus pautas de marca: tono, estructura, colores. El entregable las seguirá.</p>
-      <div class="upload-row">
-        <button class="btn btn-ghost btn-small" type="button" id="style-file-btn">Subir .md</button>
-        <input type="file" id="style-file" accept=".md,.txt" hidden />
-        <span class="file-chip" id="style-chip" hidden></span>
-      </div>
-      <textarea class="field field-area field-area-s" id="input-style" rows="4" placeholder="Pega aquí tu guía de estilo."></textarea>
+      <summary>Estilo de marca (opcional)</summary>
+      <p class="sector-hint">Dale una web y el entregable se vestirá con su identidad: color, tipografía y logo. En el Modo A, si lo dejas vacío, se usa la web de tu empresa.</p>
+      <input class="field" type="url" id="input-style-url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="webdereferencia.com" />
+      <span class="file-chip styleguide-chip" id="style-chip" hidden></span>
     </details>
 
     <button class="btn btn-grad btn-make" type="button" id="make-btn">Fabricar el entregable</button>

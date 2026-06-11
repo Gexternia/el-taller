@@ -149,6 +149,9 @@ const ENCARGOS_WEB = {
 };
 
 function appendStyleGuide(parts, input) {
+  if (input && input.brandProfile) {
+    parts.push("Identidad visual del cliente extraída de su web de referencia: " + String(input.brandProfile).slice(0, 400) + ". Si el entregable es una aplicación HTML, aplica esta identidad en su CSS: usa el color como acento principal y carga las tipografías desde Google Fonts. Si es un documento, refleja la marca en el tono y el vocabulario.");
+  }
   if (input && input.styleGuide) {
     parts.push("Guía de estilo del cliente, aplícala al tono, vocabulario, estructura y prioridades del entregable:");
     parts.push('"""' + String(input.styleGuide).slice(0, 4000) + '"""');
@@ -400,6 +403,43 @@ function pickLogo(html, baseUrl) {
   return null;
 }
 
+const GENERIC_FONTS = /^(inherit|initial|unset|sans-serif|serif|monospace|cursive|fantasy|system-ui|ui-sans-serif|ui-serif|arial|helvetica( neue)?|times( new roman)?|georgia|verdana|tahoma|segoe ui|trebuchet ms|courier( new)?|-apple-system|blinkmacsystemfont)$/i;
+
+function pickFonts(html) {
+  const names = [];
+  const links = html.match(/fonts\.googleapis\.com\/css2?\?[^"' )]+/gi) || [];
+  for (const link of links) {
+    const fams = link.match(/family=([^&"']+)/gi) || [];
+    for (const fam of fams) {
+      let name = fam.replace(/^family=/i, "");
+      try {
+        name = decodeURIComponent(name);
+      } catch (e) {}
+      name = name.split(":")[0].replace(/\+/g, " ").trim();
+      if (name && !GENERIC_FONTS.test(name)) names.push(name);
+    }
+  }
+  if (names.length < 2) {
+    const counts = {};
+    const re = /font-family\s*:\s*['"]?([A-Za-z0-9 \-]{3,40})/gi;
+    let match;
+    while ((match = re.exec(html))) {
+      const name = match[1].trim();
+      if (GENERIC_FONTS.test(name)) continue;
+      counts[name] = (counts[name] || 0) + 1;
+    }
+    Object.keys(counts)
+      .sort((a, b) => counts[b] - counts[a])
+      .forEach((name) => names.push(name));
+  }
+  const uniq = [];
+  for (const name of names) {
+    if (uniq.indexOf(name) < 0) uniq.push(name);
+    if (uniq.length === 2) break;
+  }
+  return uniq;
+}
+
 function decodeEntities(text) {
   return text
     .replace(/&nbsp;/gi, " ")
@@ -453,7 +493,8 @@ app.post("/api/fetch-web", async (req, res) => {
     if (text.length < 120) throw new Error("thin");
     const brand = {
       color: pickBrandColor(html),
-      logo: pickLogo(html, response.url || url.href)
+      logo: pickLogo(html, response.url || url.href),
+      fonts: pickFonts(html)
     };
     res.json({ ok: true, title: decodeEntities(rawTitle).replace(/\s+/g, " ").trim().slice(0, 160), text, brand });
   } catch (err) {
@@ -501,13 +542,16 @@ app.post("/api/wall", (req, res) => {
   const rawBrand = b.brand || {};
   const brandColor = /^#[0-9a-f]{6}$/i.test(String(rawBrand.color || "")) ? String(rawBrand.color).toLowerCase() : null;
   const brandLogo = /^https?:\/\//i.test(String(rawBrand.logo || "")) ? String(rawBrand.logo).slice(0, 500) : null;
+  const brandFonts = Array.isArray(rawBrand.fonts)
+    ? rawBrand.fonts.filter((f) => /^[A-Za-z0-9 \-]{2,40}$/.test(String(f))).slice(0, 2)
+    : [];
   const item = {
     id: "d" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
     docType: String(b.docType || "Documento").slice(0, 80),
     sector: String(b.sector || "").slice(0, 40),
     mode: String(b.mode || "").slice(0, 20),
     kind,
-    brand: brandColor || brandLogo ? { color: brandColor, logo: brandLogo } : null,
+    brand: brandColor || brandLogo || brandFonts.length ? { color: brandColor, logo: brandLogo, fonts: brandFonts } : null,
     title: String(b.title || "Documento generado").slice(0, 140),
     seconds: Math.max(0, Math.min(600, Number(b.seconds) || 0)),
     model: String(b.model || "").slice(0, 60),

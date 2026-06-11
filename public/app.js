@@ -15,6 +15,7 @@
     seconds: 0,
     pinned: false,
     brand: null,
+    styleBrand: null,
     dataNote: null
   };
 
@@ -31,12 +32,10 @@
     inputUrl: document.getElementById("input-url"),
     inputDatos: document.getElementById("input-datos"),
     inputLibre: document.getElementById("input-libre"),
-    inputStyle: document.getElementById("input-style"),
+    inputStyleUrl: document.getElementById("input-style-url"),
     dataFileBtn: document.getElementById("data-file-btn"),
     dataFile: document.getElementById("data-file"),
     dataChip: document.getElementById("data-chip"),
-    styleFileBtn: document.getElementById("style-file-btn"),
-    styleFile: document.getElementById("style-file"),
     styleChip: document.getElementById("style-chip"),
     makeBtn: document.getElementById("make-btn"),
     bench: document.getElementById("bench"),
@@ -142,18 +141,36 @@
     return "#" + to2(r) + to2(g) + to2(b);
   }
 
-  function styleGuideAccent() {
-    var guide = els.inputStyle.value || "";
-    var m = guide.match(/#[0-9a-fA-F]{6}\b/);
-    return m ? m[0].toLowerCase() : null;
+  function loadBrandFonts(fonts) {
+    if (!fonts || !fonts.length) return;
+    var fams = fonts
+      .map(function (f) {
+        return "family=" + encodeURIComponent(f).replace(/%20/g, "+") + ":wght@400;600;700";
+      })
+      .join("&");
+    var href = "https://fonts.googleapis.com/css2?" + fams + "&display=swap";
+    if (!document.querySelector('link[data-brandfont="' + href + '"]')) {
+      var link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      link.setAttribute("data-brandfont", href);
+      document.head.appendChild(link);
+    }
   }
 
   function applyBrand(paperEl, logoEl, brand) {
     paperEl.style.removeProperty("--doc-accent");
+    paperEl.style.removeProperty("--doc-display");
+    paperEl.style.removeProperty("--doc-body");
     logoEl.hidden = true;
     logoEl.removeAttribute("src");
     if (!brand) return;
     if (brand.color) paperEl.style.setProperty("--doc-accent", darkenIfLight(brand.color));
+    if (brand.fonts && brand.fonts.length) {
+      loadBrandFonts(brand.fonts);
+      paperEl.style.setProperty("--doc-display", '"' + brand.fonts[0] + '", "Space Grotesk", sans-serif');
+      paperEl.style.setProperty("--doc-body", '"' + (brand.fonts[1] || brand.fonts[0]) + '", "Work Sans", sans-serif');
+    }
     if (brand.logo) {
       logoEl.onerror = function () {
         logoEl.hidden = true;
@@ -164,13 +181,16 @@
   }
 
   function currentBrand() {
-    var accent = styleGuideAccent();
-    var brand = state.brand;
-    if (!accent && !brand) return null;
-    return {
-      color: accent || (brand && brand.color) || null,
-      logo: (brand && brand.logo) || null
-    };
+    return state.styleBrand || state.brand || null;
+  }
+
+  function brandProfileText(brand) {
+    if (!brand) return null;
+    var bits = [];
+    if (brand.color) bits.push("color principal " + brand.color);
+    if (brand.fonts && brand.fonts.length) bits.push("tipografías " + brand.fonts.join(" y "));
+    if (brand.logo) bits.push("logo disponible");
+    return bits.length ? bits.join("; ") : null;
   }
 
   var PDF_SRC = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js";
@@ -213,6 +233,11 @@
     var node = document.createElement("article");
     node.className = "paper pdf-paper";
     if (brand && brand.color) node.style.setProperty("--doc-accent", darkenIfLight(brand.color));
+    if (brand && brand.fonts && brand.fonts.length) {
+      loadBrandFonts(brand.fonts);
+      node.style.setProperty("--doc-display", '"' + brand.fonts[0] + '", "Space Grotesk", sans-serif');
+      node.style.setProperty("--doc-body", '"' + (brand.fonts[1] || brand.fonts[0]) + '", "Work Sans", sans-serif');
+    }
     var head = document.createElement("header");
     head.className = "paper-head";
     var type = document.createElement("span");
@@ -267,9 +292,14 @@
 
   async function downloadPdf(docType, html, brand, title, meta) {
     var node = buildPdfNode(docType, html, brand, meta);
-    document.body.appendChild(node);
     try {
       await ensurePdfLib();
+      if (document.fonts && document.fonts.ready) {
+        await Promise.race([
+          document.fonts.ready,
+          new Promise(function (resolve) { setTimeout(resolve, 2500); })
+        ]);
+      }
       await window
         .html2pdf()
         .set({
@@ -284,8 +314,6 @@
         .save();
     } catch (e) {
       printFallback(docType, html, brand, meta, title);
-    } finally {
-      if (node.parentNode) node.parentNode.removeChild(node);
     }
   }
 
@@ -470,12 +498,12 @@
   }
 
   function gatherInput() {
-    var styleGuide = els.inputStyle.value.trim().slice(0, 4000) || null;
+    var styleUrl = els.inputStyleUrl.value.trim() || null;
     if (state.mode === "web") {
       var url = els.inputUrl.value.trim();
       if (!url) return null;
       var company = url.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split(/[/?#]/)[0];
-      return { url: url, company: company, styleGuide: styleGuide };
+      return { url: url, company: company, styleUrl: styleUrl };
     }
     if (state.mode === "datos") {
       var data = els.inputDatos.value.trim();
@@ -486,11 +514,11 @@
         els.dataChip.textContent = sampled.note.split(";")[0];
         els.dataChip.hidden = false;
       }
-      return { data: sampled.text, dataNote: sampled.note, styleGuide: styleGuide };
+      return { data: sampled.text, dataNote: sampled.note, styleUrl: styleUrl };
     }
     var brief = els.inputLibre.value.trim();
     if (!brief) return null;
-    return { brief: brief, styleGuide: styleGuide };
+    return { brief: brief, styleUrl: styleUrl };
   }
 
   async function fetchWebText(url) {
@@ -599,6 +627,7 @@
     }
     state.busy = true;
     state.brand = null;
+    state.styleBrand = null;
     els.makeBtn.disabled = true;
     resetBench();
     els.bench.hidden = false;
@@ -610,14 +639,25 @@
       return;
     }
     try {
+      if (input.styleUrl) {
+        setStatus("Leyendo la web de estilo");
+        var styleWeb = await fetchWebText(input.styleUrl);
+        if (styleWeb && styleWeb.brand) {
+          state.styleBrand = styleWeb.brand;
+          els.styleChip.textContent = "Estilo aplicado: " + (styleWeb.title || input.styleUrl).slice(0, 60);
+          els.styleChip.hidden = false;
+        }
+      }
       if (state.mode === "web") {
         var web = await fetchWebText(input.url);
         if (web) {
           input.webText = web.text;
           if (web.title) input.company = web.title;
-          if (web.brand && (web.brand.color || web.brand.logo)) state.brand = web.brand;
+          if (web.brand && (web.brand.color || web.brand.logo || (web.brand.fonts || []).length)) state.brand = web.brand;
         }
       }
+      var profile = brandProfileText(currentBrand());
+      if (profile) input.brandProfile = profile;
       setStatus("Encargo enviado al taller");
       await streamGeneration({ mode: state.mode, sector: state.sector, input: input });
     } catch (e) {
@@ -787,12 +827,6 @@
     var lines = text.split(/\r?\n/).filter(function (l) { return l.trim().length > 0; }).length;
     els.dataChip.textContent = file.name + " · " + lines.toLocaleString("es-ES") + " filas" + (sampled.note ? " · muestreado" : "");
     els.dataChip.hidden = false;
-  });
-
-  wireFileInput(els.styleFileBtn, els.styleFile, els.styleChip, function (text, file) {
-    els.inputStyle.value = text.slice(0, 4000);
-    els.styleChip.textContent = file.name;
-    els.styleChip.hidden = false;
   });
 
   els.modes.forEach(function (btn) {

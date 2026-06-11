@@ -740,6 +740,8 @@ footer.marquee {
 
 .paper {
   --doc-accent: var(--paper-ink);
+  --doc-display: var(--display);
+  --doc-body: var(--body);
   max-width: 760px;
   margin: 0 auto;
   background: var(--paper);
@@ -799,7 +801,7 @@ footer.marquee {
 }
 
 .paper-body {
-  font-family: var(--body);
+  font-family: var(--doc-body);
   font-size: 15px;
   line-height: 1.65;
   min-height: 60px;
@@ -807,7 +809,7 @@ footer.marquee {
 
 .paper-body h3 {
   margin: 0 0 16px;
-  font-family: var(--display);
+  font-family: var(--doc-display);
   font-weight: 700;
   font-size: clamp(21px, 3vw, 28px);
   line-height: 1.18;
@@ -830,7 +832,7 @@ footer.marquee {
   border-left: 3px solid var(--doc-accent);
   background: rgba(27, 27, 31, 0.045);
   border-radius: 0 10px 10px 0;
-  font-family: var(--display);
+  font-family: var(--doc-display);
   font-weight: 500;
   font-size: 16px;
   line-height: 1.45;
@@ -1164,15 +1166,17 @@ footer.marquee {
 .modal-action:disabled { opacity: 0.5; cursor: default; }
 
 .pdf-paper {
-  position: fixed;
-  left: -10000px;
-  top: 0;
   width: 794px;
   max-width: none;
   animation: none;
   box-shadow: none;
   border-radius: 0;
   padding: 48px 52px;
+}
+
+.styleguide-chip {
+  display: inline-block;
+  margin-top: 12px;
 }
 
 .js .reveal {
