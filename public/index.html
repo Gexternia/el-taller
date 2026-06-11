@@ -156,16 +156,32 @@
     </div>
 
     <div class="panel-body" id="panel-datos" hidden>
-      <label class="field-label" for="input-datos">Pega tus datos</label>
-      <textarea class="field field-area" id="input-datos" rows="7" spellcheck="false" placeholder="CSV o celdas de Excel. Por ejemplo: gasto por mes, reservas por destino, noches por hotel."></textarea>
-      <p class="sector-hint">Entregable: informe ejecutivo de una página. La foto, la desviación que importa, la acción recomendada.</p>
+      <label class="field-label" for="input-datos">Tus datos</label>
+      <div class="upload-row">
+        <button class="btn btn-ghost btn-small" type="button" id="data-file-btn">Subir archivo</button>
+        <input type="file" id="data-file" accept=".csv,.tsv,.txt" hidden />
+        <span class="file-chip" id="data-chip" hidden></span>
+      </div>
+      <textarea class="field field-area" id="input-datos" rows="7" spellcheck="false" placeholder="Sube un CSV o pega aquí tus datos: gasto por mes, reservas por destino, noches por hotel."></textarea>
+      <p class="sector-hint" id="datos-hint">Entregable: informe ejecutivo de una página. La foto, la desviación que importa, la acción recomendada. Los archivos grandes se muestrean solos.</p>
     </div>
 
     <div class="panel-body" id="panel-libre" hidden>
-      <label class="field-label" for="input-libre">Describe el documento que necesitas</label>
-      <textarea class="field field-area" id="input-libre" rows="7" placeholder="Por ejemplo: una política de viajes de una página para una pyme de 40 empleados con oficinas en A Coruña y Madrid."></textarea>
-      <p class="sector-hint">Entregable: el documento terminado, con la estructura que pida el encargo.</p>
+      <label class="field-label" for="input-libre">Pide lo que necesites</label>
+      <textarea class="field field-area" id="input-libre" rows="7" placeholder="Un documento, una política, un argumentario. O una herramienta: una calculadora de dietas por kilometraje, un simulador de presupuesto de viajes, un panel de KPIs."></textarea>
+      <p class="sector-hint">Si pides un documento, lo redacta. Si pides una herramienta, la programa y la verás funcionando aquí mismo.</p>
     </div>
+
+    <details class="styleguide">
+      <summary>Guía de estilo (opcional)</summary>
+      <p class="sector-hint">Sube un DESIGN.md o pega tus pautas de marca: tono, estructura, colores. El entregable las seguirá.</p>
+      <div class="upload-row">
+        <button class="btn btn-ghost btn-small" type="button" id="style-file-btn">Subir .md</button>
+        <input type="file" id="style-file" accept=".md,.txt" hidden />
+        <span class="file-chip" id="style-chip" hidden></span>
+      </div>
+      <textarea class="field field-area field-area-s" id="input-style" rows="4" placeholder="Pega aquí tu guía de estilo."></textarea>
+    </details>
 
     <button class="btn btn-grad btn-make" type="button" id="make-btn">Fabricar el entregable</button>
   </div>
@@ -184,7 +200,10 @@
     <article class="paper" id="paper" hidden>
       <header class="paper-head">
         <span class="paper-type" id="paper-type">Documento</span>
-        <span class="paper-num" id="paper-num">AEGVE·26</span>
+        <span class="paper-head-right">
+          <img class="paper-logo" id="paper-logo" alt="" hidden />
+          <span class="paper-num" id="paper-num">AEGVE·26</span>
+        </span>
       </header>
       <div class="paper-body" id="paper-body"></div>
       <footer class="paper-foot">
@@ -239,10 +258,13 @@
   <div class="modal-backdrop" id="modal-backdrop"></div>
   <div class="modal-box">
     <button class="modal-close" type="button" id="modal-close" aria-label="Cerrar">Cerrar</button>
-    <article class="paper modal-paper">
+    <article class="paper modal-paper" id="modal-paper">
       <header class="paper-head">
         <span class="paper-type" id="modal-type">Documento</span>
-        <span class="paper-num" id="modal-num"></span>
+        <span class="paper-head-right">
+          <img class="paper-logo" id="modal-logo" alt="" hidden />
+          <span class="paper-num" id="modal-num"></span>
+        </span>
       </header>
       <div class="paper-body" id="modal-body"></div>
       <footer class="paper-foot">

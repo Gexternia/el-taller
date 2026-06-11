@@ -12,7 +12,7 @@ const DATA_DIR = path.join(__dirname, "data");
 const WALL_FILE = path.join(DATA_DIR, "wall.json");
 const MAX_ACTIVE = 3;
 
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "6mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
 const SEED_WALL = [
@@ -113,13 +113,25 @@ function sse(res, payload) {
   res.write("data: " + JSON.stringify(payload) + "\n\n");
 }
 
-const SYSTEM_PROMPT = [
+const SYSTEM_DOC = [
   "Eres el agente de entregables de Externia en una jornada de AEGVE, la asociación española de gestores de viajes de empresa. El público: hoteles, movilidad y rent-a-car, agencias y TMC, y travel managers de empresa.",
   "Recibes un encargo y produces ÚNICAMENTE el documento final, en español de España, listo para usar: sin saludos, sin explicar lo que vas a hacer, sin notas de IA, sin despedidas.",
   "Estructura profesional con títulos y tablas cuando aporten. Extensión de una página.",
   "Si el encargo trae datos reales, úsalos con rigor y no inventes cifras. Si faltan datos, usa marcadores claros del tipo [completar].",
+  "Si el material lo permite, abre con una tabla corta de cifras clave y cierra con un blockquote de una sola frase con la conclusión que importa.",
+  "Si el encargo incluye una guía de estilo del cliente, síguela en tono, vocabulario y estructura.",
   "Tono sobrio, directo, sectorial. Frases cortas. Sin exclamaciones. Sin emojis.",
-  "Devuelve el documento en HTML simple usando solo h3, h4, p, table, thead, tbody, tr, th, td, ul, li, strong y em. Sin estilos inline, sin markdown, sin DOCTYPE y sin etiquetas html, head o body. Empieza directamente con un h3 que sea el título del documento."
+  "Devuelve el documento en HTML simple usando solo h3, h4, p, table, thead, tbody, tr, th, td, ul, ol, li, blockquote, strong y em. Sin estilos inline, sin markdown, sin DOCTYPE y sin etiquetas html, head o body. Empieza directamente con un h3 que sea el título del documento."
+].join(" ");
+
+const SYSTEM_LIBRE = [
+  "Eres el agente de entregables de Externia en una jornada de AEGVE, la asociación española de gestores de viajes de empresa. Recibes un encargo libre y lo cumples tal cual se pide, produciendo ÚNICAMENTE el entregable final: sin saludos, sin explicar lo que vas a hacer, sin notas de IA.",
+  "El encargo manda: formato, extensión, idioma y tono los decide quien pide. En ausencia de indicación, español de España, sobrio y profesional, sin exclamaciones ni emojis.",
+  "Si el resultado natural del encargo es un documento, devuélvelo en HTML simple usando solo h3, h4, p, table, thead, tbody, tr, th, td, ul, ol, li, blockquote, strong y em, sin estilos inline, sin DOCTYPE y sin etiquetas html, head o body, empezando por un h3 con el título.",
+  "Si el encargo pide algo interactivo o visual —una aplicación, calculadora, simulador, panel, gráfico, juego o presentación—, devuelve un único archivo HTML completo y autónomo: empieza por <!doctype html>, incluye title, CSS y JavaScript embebidos, sin dependencias externas ni CDNs, funcional de una sola pasada y usable en móvil. Estética cuidada: fondo oscuro, tipografía del sistema, acentos cálidos.",
+  "Si el encargo trae datos reales, úsalos con rigor y no inventes cifras; marca lo que falte con [completar].",
+  "Si el encargo incluye una guía de estilo del cliente, síguela.",
+  "Nunca escribas texto fuera del entregable. Sin markdown ni vallas de código."
 ].join(" ");
 
 const DOC_TYPES_WEB = {
@@ -136,6 +148,13 @@ const ENCARGOS_WEB = {
   empresa: "Produce un diagnóstico exprés del programa de viajes de esta empresa: qué señales da su web sobre cómo viaja y compra viajes, y exactamente 3 recomendaciones accionables."
 };
 
+function appendStyleGuide(parts, input) {
+  if (input && input.styleGuide) {
+    parts.push("Guía de estilo del cliente, aplícala al tono, vocabulario, estructura y prioridades del entregable:");
+    parts.push('"""' + String(input.styleGuide).slice(0, 4000) + '"""');
+  }
+}
+
 function buildPrompt(mode, sector, input) {
   if (mode === "web") {
     const s = DOC_TYPES_WEB[sector] ? sector : "empresa";
@@ -148,28 +167,34 @@ function buildPrompt(mode, sector, input) {
     } else {
       parts.push("No ha sido posible leer su web completa. Trabaja a partir del nombre de la empresa, su dominio y el sector, sin inventar datos concretos: usa [completar] donde falte información. Incluye tras el título un p con em que diga exactamente: Elaborado a partir de información pública básica.");
     }
+    appendStyleGuide(parts, input);
     return { docType, userPrompt: parts.join("\n\n") };
   }
   if (mode === "datos") {
     const docType = "Informe ejecutivo";
-    const userPrompt = [
+    const parts = [
       "Produce un informe ejecutivo de una página a partir de estos datos tabulares. Estructura obligatoria: la foto general, la desviación que importa y la acción recomendada. Usa una tabla solo si condensa mejor que el texto.",
-      "Si los datos no son interpretables, dilo con elegancia y marca lo que falta con [completar].",
-      "Datos pegados por el asistente:",
-      '"""' + String(input.data || "").slice(0, 12000) + '"""'
-    ].join("\n\n");
-    return { docType, userPrompt };
+      "Si los datos no son interpretables, dilo con elegancia y marca lo que falta con [completar]."
+    ];
+    if (input.dataNote) {
+      parts.push("Nota sobre los datos: " + String(input.dataNote).slice(0, 300));
+    }
+    parts.push("Datos aportados por el asistente:");
+    parts.push('"""' + String(input.data || "").slice(0, 14000) + '"""');
+    appendStyleGuide(parts, input);
+    return { docType, userPrompt: parts.join("\n\n") };
   }
-  const docType = "Documento a medida";
-  const userPrompt = [
-    "Encargo libre de un asistente de la jornada. Produce el documento terminado que mejor responda al encargo, eligiendo tú la estructura profesional adecuada.",
+  const docType = "Encargo libre";
+  const parts = [
+    "Encargo libre de un asistente de la jornada. Cúmplelo tal cual se pide y entrega el resultado terminado.",
     "Encargo:",
-    '"""' + String(input.brief || "").slice(0, 4000) + '"""'
-  ].join("\n\n");
-  return { docType, userPrompt };
+    '"""' + String(input.brief || "").slice(0, 6000) + '"""'
+  ];
+  appendStyleGuide(parts, input);
+  return { docType, userPrompt: parts.join("\n\n") };
 }
 
-async function streamAnthropic(model, userPrompt, onDelta, signal) {
+async function streamAnthropic(model, system, maxTokens, userPrompt, onDelta, signal) {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -179,9 +204,9 @@ async function streamAnthropic(model, userPrompt, onDelta, signal) {
     },
     body: JSON.stringify({
       model,
-      max_tokens: 1800,
+      max_tokens: maxTokens,
       stream: true,
-      system: SYSTEM_PROMPT,
+      system,
       messages: [{ role: "user", content: userPrompt }]
     }),
     signal
@@ -258,8 +283,11 @@ app.post("/api/generate", async (req, res) => {
     return;
   }
   const { docType, userPrompt } = buildPrompt(mode, String(body.sector || ""), body.input || {});
+  const isLibre = mode === "libre";
+  const system = isLibre ? SYSTEM_LIBRE : SYSTEM_DOC;
+  const maxTokens = isLibre ? 6000 : 1800;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 90000);
+  const timer = setTimeout(() => controller.abort(), isLibre ? 150000 : 90000);
   const startedAt = Date.now();
   let model = PRIMARY_MODEL;
   let emitted = 0;
@@ -270,12 +298,12 @@ app.post("/api/generate", async (req, res) => {
   try {
     sse(res, { type: "start", docType, model });
     try {
-      await streamAnthropic(PRIMARY_MODEL, userPrompt, onDelta, controller.signal);
+      await streamAnthropic(PRIMARY_MODEL, system, maxTokens, userPrompt, onDelta, controller.signal);
     } catch (err) {
       if (emitted === 0 && !controller.signal.aborted) {
         model = FALLBACK_MODEL;
         sse(res, { type: "model", model });
-        await streamAnthropic(FALLBACK_MODEL, userPrompt, onDelta, controller.signal);
+        await streamAnthropic(FALLBACK_MODEL, system, maxTokens, userPrompt, onDelta, controller.signal);
       } else {
         throw err;
       }
@@ -309,6 +337,67 @@ function isPrivateIp(ip) {
   if (lower.startsWith("fc") || lower.startsWith("fd") || lower.startsWith("fe80")) return true;
   if (lower.startsWith("::ffff:")) return isPrivateIp(lower.slice(7));
   return false;
+}
+
+function colorMetrics(hex) {
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  return {
+    sat: max === 0 ? 0 : (max - min) / max,
+    lum: (r * 0.299 + g * 0.587 + b * 0.114) / 255
+  };
+}
+
+function pickBrandColor(html) {
+  const themeMatch =
+    html.match(/<meta[^>]+name=["']theme-color["'][^>]+content=["']#?([0-9a-fA-F]{6})["']/i) ||
+    html.match(/<meta[^>]+content=["']#?([0-9a-fA-F]{6})["'][^>]+name=["']theme-color["']/i);
+  if (themeMatch) {
+    const hex = themeMatch[1].toLowerCase();
+    const m = colorMetrics(hex);
+    if (m.sat >= 0.25 && m.lum >= 0.1 && m.lum <= 0.9) return "#" + hex;
+  }
+  const counts = {};
+  const re = /#([0-9a-fA-F]{6})\b/g;
+  let match;
+  while ((match = re.exec(html))) {
+    const hex = match[1].toLowerCase();
+    counts[hex] = (counts[hex] || 0) + 1;
+  }
+  let best = null;
+  let bestScore = 0;
+  for (const hex of Object.keys(counts)) {
+    const m = colorMetrics(hex);
+    if (m.sat < 0.35 || m.lum < 0.1 || m.lum > 0.9) continue;
+    const score = counts[hex] * (0.5 + m.sat);
+    if (score > bestScore) {
+      bestScore = score;
+      best = "#" + hex;
+    }
+  }
+  return best;
+}
+
+function pickLogo(html, baseUrl) {
+  const patterns = [
+    /<link[^>]+rel=["']apple-touch-icon[^"']*["'][^>]*>/i,
+    /<img[^>]+(?:class|id|alt|src)=["'][^"']*logo[^"']*["'][^>]*>/i,
+    /<link[^>]+rel=["'](?:shortcut )?icon["'][^>]*>/i
+  ];
+  for (const pattern of patterns) {
+    const tag = (html.match(pattern) || [])[0];
+    if (!tag) continue;
+    const src = (tag.match(/(?:href|src)=["']([^"']+)["']/i) || [])[1];
+    if (!src || src.indexOf("data:") === 0) continue;
+    try {
+      const resolved = new URL(src, baseUrl).href;
+      if (/^https?:/i.test(resolved)) return resolved.slice(0, 500);
+    } catch (e) {}
+  }
+  return null;
 }
 
 function decodeEntities(text) {
@@ -362,7 +451,11 @@ app.post("/api/fetch-web", async (req, res) => {
       .trim()
       .slice(0, 8000);
     if (text.length < 120) throw new Error("thin");
-    res.json({ ok: true, title: decodeEntities(rawTitle).replace(/\s+/g, " ").trim().slice(0, 160), text });
+    const brand = {
+      color: pickBrandColor(html),
+      logo: pickLogo(html, response.url || url.href)
+    };
+    res.json({ ok: true, title: decodeEntities(rawTitle).replace(/\s+/g, " ").trim().slice(0, 160), text, brand });
   } catch (err) {
     res.json({ ok: false });
   }
@@ -376,6 +469,7 @@ app.get("/api/wall", (req, res) => {
       docType: item.docType,
       sector: item.sector,
       mode: item.mode,
+      kind: item.kind || "doc",
       title: item.title,
       seconds: item.seconds,
       model: item.model,
@@ -397,16 +491,23 @@ app.get("/api/wall/:id", (req, res) => {
 
 app.post("/api/wall", (req, res) => {
   const b = req.body || {};
-  const html = sanitizeHtml(String(b.html || "")).slice(0, 120000);
+  const kind = b.kind === "app" ? "app" : "doc";
+  const rawHtml = String(b.html || "");
+  const html = (kind === "app" ? rawHtml : sanitizeHtml(rawHtml)).slice(0, 300000);
   if (!html || html.length < 40) {
     res.status(400).json({ ok: false });
     return;
   }
+  const rawBrand = b.brand || {};
+  const brandColor = /^#[0-9a-f]{6}$/i.test(String(rawBrand.color || "")) ? String(rawBrand.color).toLowerCase() : null;
+  const brandLogo = /^https?:\/\//i.test(String(rawBrand.logo || "")) ? String(rawBrand.logo).slice(0, 500) : null;
   const item = {
     id: "d" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
     docType: String(b.docType || "Documento").slice(0, 80),
     sector: String(b.sector || "").slice(0, 40),
     mode: String(b.mode || "").slice(0, 20),
+    kind,
+    brand: brandColor || brandLogo ? { color: brandColor, logo: brandLogo } : null,
     title: String(b.title || "Documento generado").slice(0, 140),
     seconds: Math.max(0, Math.min(600, Number(b.seconds) || 0)),
     model: String(b.model || "").slice(0, 60),

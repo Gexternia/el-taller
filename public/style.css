@@ -615,6 +615,69 @@ footer.marquee {
   font-size: 16px;
 }
 
+.btn-small {
+  padding: 10px 20px;
+  font-size: 13px;
+}
+
+.upload-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.file-chip {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.field-area-s { min-height: 90px; }
+
+.styleguide {
+  margin-top: 22px;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
+
+.styleguide summary {
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dim);
+  list-style: none;
+}
+
+.styleguide summary::before {
+  content: "+";
+  display: inline-block;
+  margin-right: 10px;
+  font-weight: 700;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.styleguide[open] summary::before { content: "-"; }
+
+.styleguide summary::-webkit-details-marker { display: none; }
+
+.styleguide summary:hover { color: var(--ink); }
+
+.styleguide .sector-hint { margin: 14px 0; }
+
 .bench { margin-top: clamp(28px, 5vh, 48px); }
 
 .bench-status {
@@ -663,6 +726,7 @@ footer.marquee {
 .error-card p { margin: 0 0 18px; color: var(--ink); font-size: 16px; }
 
 .paper {
+  --doc-accent: var(--paper-ink);
   max-width: 760px;
   margin: 0 auto;
   background: var(--paper);
@@ -673,6 +737,8 @@ footer.marquee {
   animation: paperIn 0.6s cubic-bezier(0.2, 0.8, 0.25, 1);
 }
 
+.paper.is-app { max-width: 980px; }
+
 @keyframes paperIn {
   from { opacity: 0; transform: translateY(28px) scale(0.985); }
   to { opacity: 1; transform: none; }
@@ -680,12 +746,26 @@ footer.marquee {
 
 .paper-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 14px;
   padding-bottom: 14px;
   margin-bottom: 26px;
-  border-bottom: 3px solid var(--paper-ink);
+  border-bottom: 3px solid var(--doc-accent);
+}
+
+.paper-head-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.paper-logo {
+  height: 26px;
+  max-width: 120px;
+  width: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .paper-type {
@@ -694,6 +774,7 @@ footer.marquee {
   font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
+  color: var(--doc-accent);
 }
 
 .paper-num {
@@ -727,8 +808,22 @@ footer.marquee {
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #3A3A40;
+  color: var(--doc-accent);
 }
+
+.paper-body blockquote {
+  margin: 22px 0;
+  padding: 14px 20px;
+  border-left: 3px solid var(--doc-accent);
+  background: rgba(27, 27, 31, 0.045);
+  border-radius: 0 10px 10px 0;
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.paper-body blockquote p { margin: 0; }
 
 .paper-body p { margin: 0 0 14px; }
 
@@ -751,7 +846,31 @@ footer.marquee {
   text-transform: uppercase;
   text-align: left;
   padding: 8px 12px 8px 0;
-  border-bottom: 2px solid var(--paper-ink);
+  border-bottom: 2px solid var(--doc-accent);
+}
+
+.code-stream {
+  margin: 0;
+  padding: 18px 20px;
+  background: #101013;
+  color: #C8C8D2;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.6;
+  border-radius: 12px;
+  max-height: 340px;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.app-frame {
+  display: block;
+  width: 100%;
+  height: min(70vh, 680px);
+  border: 0;
+  border-radius: 12px;
+  background: #101013;
 }
 
 .paper-body td {
@@ -882,6 +1001,12 @@ footer.marquee {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--dim);
+}
+
+.wall-tag-app {
+  border: 1px solid transparent;
+  background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--grad) border-box;
+  color: var(--ink);
 }
 
 .wall-card-title {
