@@ -53,7 +53,10 @@
     paperMeta: document.getElementById("paper-meta"),
     benchActions: document.getElementById("bench-actions"),
     pinBtn: document.getElementById("pin-btn"),
+    downloadBtn: document.getElementById("download-btn"),
     againBtn: document.getElementById("again-btn"),
+    modalDownload: document.getElementById("modal-download"),
+    scrollProgress: document.getElementById("scroll-progress"),
     wallN: document.getElementById("wall-n"),
     wallGrid: document.getElementById("wall-grid"),
     modal: document.getElementById("modal"),
@@ -170,6 +173,153 @@
     };
   }
 
+  var PDF_SRC = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js";
+  var pdfLibPromise = null;
+
+  function ensurePdfLib() {
+    if (window.html2pdf) return Promise.resolve();
+    if (pdfLibPromise) return pdfLibPromise;
+    pdfLibPromise = new Promise(function (resolve, reject) {
+      var script = document.createElement("script");
+      script.src = PDF_SRC;
+      script.onload = function () { resolve(); };
+      script.onerror = function () {
+        pdfLibPromise = null;
+        reject(new Error("cdn"));
+      };
+      document.head.appendChild(script);
+      setTimeout(function () {
+        if (!window.html2pdf) {
+          pdfLibPromise = null;
+          reject(new Error("timeout"));
+        }
+      }, 9000);
+    });
+    return pdfLibPromise;
+  }
+
+  function slugify(text) {
+    var slug = String(text || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60);
+    return slug || "entregable";
+  }
+
+  function buildPdfNode(docType, html, brand, meta) {
+    var node = document.createElement("article");
+    node.className = "paper pdf-paper";
+    if (brand && brand.color) node.style.setProperty("--doc-accent", darkenIfLight(brand.color));
+    var head = document.createElement("header");
+    head.className = "paper-head";
+    var type = document.createElement("span");
+    type.className = "paper-type";
+    type.textContent = docType;
+    head.appendChild(type);
+    if (brand && brand.logo) {
+      var img = document.createElement("img");
+      img.className = "paper-logo";
+      img.crossOrigin = "anonymous";
+      img.src = brand.logo;
+      head.appendChild(img);
+    }
+    var body = document.createElement("div");
+    body.className = "paper-body";
+    body.innerHTML = html;
+    var foot = document.createElement("footer");
+    foot.className = "paper-foot";
+    var stamp = document.createElement("span");
+    stamp.className = "paper-stamp";
+    stamp.textContent = "Generado en vivo · Jornada AEGVE A Coruña · Externia";
+    var metaEl = document.createElement("span");
+    metaEl.className = "paper-meta";
+    metaEl.textContent = meta || "";
+    foot.appendChild(stamp);
+    foot.appendChild(metaEl);
+    node.appendChild(head);
+    node.appendChild(body);
+    node.appendChild(foot);
+    return node;
+  }
+
+  function printFallback(docType, html, brand, meta, title) {
+    var accent = brand && brand.color ? darkenIfLight(brand.color) : "#1B1B1F";
+    var win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(
+      "<!doctype html><html><head><meta charset=\"utf-8\"><title>" + (title || docType) + "</title><style>" +
+      "body{font-family:Segoe UI,Arial,sans-serif;color:#1B1B1F;max-width:720px;margin:0 auto;padding:40px 24px;line-height:1.6;font-size:14px}" +
+      ".tp{font-family:Consolas,monospace;font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:" + accent + ";border-bottom:3px solid " + accent + ";padding-bottom:12px;margin-bottom:24px}" +
+      "h3{font-size:24px;line-height:1.2;margin:0 0 14px}h4{font-family:Consolas,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:" + accent + ";margin:22px 0 8px}" +
+      "table{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 18px}th{font-family:Consolas,monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;text-align:left;padding:7px 10px 7px 0;border-bottom:2px solid " + accent + "}td{padding:8px 10px 8px 0;border-bottom:1px solid #1B1B1F22;vertical-align:top}" +
+      "blockquote{margin:20px 0;padding:12px 18px;border-left:3px solid " + accent + ";background:#1B1B1F0b;font-weight:600}" +
+      ".st{margin-top:32px;padding-top:14px;border-top:1px solid #1B1B1F29;font-family:Consolas,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#6E6E76}" +
+      "</style></head><body><div class=\"tp\">" + docType + "</div>" + html +
+      "<p class=\"st\">Generado en vivo · Jornada AEGVE A Coruña · Externia" + (meta ? " · " + meta : "") + "</p></body></html>"
+    );
+    win.document.close();
+    win.focus();
+    setTimeout(function () { win.print(); }, 500);
+  }
+
+  async function downloadPdf(docType, html, brand, title, meta) {
+    var node = buildPdfNode(docType, html, brand, meta);
+    document.body.appendChild(node);
+    try {
+      await ensurePdfLib();
+      await window
+        .html2pdf()
+        .set({
+          margin: [12, 12, 14, 12],
+          filename: slugify(title) + ".pdf",
+          image: { type: "jpeg", quality: 0.95 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: "#FBFAF7", logging: false, windowWidth: 794 },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          pagebreak: { mode: ["css", "legacy"], avoid: ["table", "blockquote", "h4", "tr"] }
+        })
+        .from(node)
+        .save();
+    } catch (e) {
+      printFallback(docType, html, brand, meta, title);
+    } finally {
+      if (node.parentNode) node.parentNode.removeChild(node);
+    }
+  }
+
+  function downloadAppHtml(title, html) {
+    var blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    var link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = slugify(title) + ".html";
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(function () {
+      URL.revokeObjectURL(link.href);
+      link.remove();
+    }, 600);
+  }
+
+  async function handleDownload(btn, item) {
+    if (btn.disabled) return;
+    var original = btn.textContent;
+    btn.disabled = true;
+    if (item.kind === "app") {
+      downloadAppHtml(item.title, item.html);
+      btn.disabled = false;
+      return;
+    }
+    btn.textContent = "Preparando PDF";
+    try {
+      await downloadPdf(item.docType, item.html, item.brand, item.title, item.meta);
+    } finally {
+      btn.textContent = original;
+      btn.disabled = false;
+    }
+  }
+
   function ensureCodeEl() {
     if (!codeEl) {
       codeEl = document.createElement("pre");
@@ -280,6 +430,7 @@
     } else {
       setStatus("Entregable terminado");
     }
+    els.downloadBtn.textContent = state.kind === "app" ? "Descargar HTML" : "Descargar PDF";
     els.benchActions.hidden = false;
     state.busy = false;
     els.makeBtn.disabled = false;
@@ -523,7 +674,11 @@
   var wallShown = -1;
 
   function renderWall(data) {
-    els.wallN.textContent = String(data.count);
+    if (typeof renderWallCount === "function") {
+      renderWallCount(data.count);
+    } else {
+      els.wallN.textContent = String(data.count);
+    }
     if (data.items.length === wallShown) return;
     wallShown = data.items.length;
     els.wallGrid.innerHTML = "";
@@ -577,12 +732,16 @@
     } catch (e) {}
   }
 
+  var modalItem = null;
+
   async function openModal(id) {
     try {
       var res = await fetch("/api/wall/" + encodeURIComponent(id));
       var json = await res.json();
       if (!json || !json.ok) return;
       var item = json.item;
+      modalItem = item;
+      els.modalDownload.textContent = item.kind === "app" ? "Descargar HTML" : "Descargar PDF";
       els.modalType.textContent = item.docType;
       els.modalNum.textContent = item.example ? "ejemplo" : item.time + " h";
       applyBrand(els.modalPaper, els.modalLogo, item.brand || null);
@@ -652,6 +811,38 @@
   els.retryBtn.addEventListener("click", generate);
   els.pinBtn.addEventListener("click", pinToWall);
 
+  els.downloadBtn.addEventListener("click", function () {
+    var cleaned = cleanRaw(state.raw);
+    var title;
+    if (state.kind === "app") {
+      var tm = cleaned.match(/<title[^>]*>([^<]*)<\/title>/i);
+      title = tm && tm[1].trim() ? tm[1].trim() : "Aplicación a medida";
+    } else {
+      var firstH3 = els.paperBody.querySelector("h3");
+      title = firstH3 ? firstH3.textContent.trim() : state.docType;
+    }
+    handleDownload(els.downloadBtn, {
+      kind: state.kind || "doc",
+      docType: state.kind === "app" ? "Aplicación en vivo" : state.docType,
+      html: cleaned,
+      brand: currentBrand(),
+      title: title,
+      meta: state.model + " · " + fmtSeconds(state.seconds)
+    });
+  });
+
+  els.modalDownload.addEventListener("click", function () {
+    if (!modalItem) return;
+    handleDownload(els.modalDownload, {
+      kind: modalItem.kind || "doc",
+      docType: modalItem.docType,
+      html: modalItem.html,
+      brand: modalItem.brand || null,
+      title: modalItem.title,
+      meta: (modalItem.model || "") + (modalItem.seconds ? " · " + fmtSeconds(modalItem.seconds) : "")
+    });
+  });
+
   els.againBtn.addEventListener("click", function () {
     els.bench.hidden = true;
     resetBench();
@@ -692,6 +883,142 @@
 
   document.querySelectorAll(".reveal").forEach(function (el) {
     observer.observe(el);
+  });
+
+  var motionOK = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+  function animateNumber(el, target, suffix, duration) {
+    var t0 = performance.now();
+    function tick(now) {
+      var k = Math.min(1, (now - t0) / duration);
+      k = 1 - Math.pow(1 - k, 3);
+      el.textContent = Math.round(target * k) + suffix;
+      if (k < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  if (motionOK) {
+    var statObserver = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          statObserver.unobserve(entry.target);
+          var m = entry.target.textContent.trim().match(/^(\d+)(.*)$/);
+          if (m) animateNumber(entry.target, parseInt(m[1], 10), m[2], 1200);
+        });
+      },
+      { threshold: 0.6 }
+    );
+    document.querySelectorAll(".stat .k").forEach(function (el) {
+      statObserver.observe(el);
+    });
+  }
+
+  var parEls = [];
+
+  function collectParallax() {
+    parEls = [];
+    document.querySelectorAll("[data-par]").forEach(function (el) {
+      var fixed = getComputedStyle(el.parentNode).position === "fixed" || getComputedStyle(el).position === "fixed";
+      var top = 0;
+      if (!fixed) {
+        var rect = el.getBoundingClientRect();
+        top = rect.top + window.scrollY;
+      }
+      parEls.push({ el: el, speed: parseFloat(el.dataset.par) || 0, fixed: fixed, top: top, h: el.offsetHeight });
+    });
+    var delta = document.getElementById("cover-delta");
+    if (delta && !delta.dataset.par) {
+      var r = delta.getBoundingClientRect();
+      parEls.push({ el: delta, speed: 0.12, fixed: false, top: r.top + window.scrollY, h: delta.offsetHeight, base: "rotate(8deg)" });
+    }
+  }
+
+  var ticking = false;
+
+  function motionFrame() {
+    ticking = false;
+    var y = window.scrollY;
+    var vh = window.innerHeight;
+    var max = document.documentElement.scrollHeight - vh;
+    els.scrollProgress.style.transform = "scaleX(" + (max > 0 ? Math.min(1, y / max) : 0) + ")";
+    if (!motionOK) return;
+    parEls.forEach(function (p) {
+      var ty;
+      if (p.fixed) {
+        ty = -y * p.speed;
+      } else {
+        var center = p.top + p.h / 2 - y - vh / 2;
+        ty = -center * p.speed;
+      }
+      p.el.style.transform = (p.base || "") + " translate3d(0," + ty.toFixed(1) + "px,0)";
+    });
+  }
+
+  function requestMotion() {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(motionFrame);
+    }
+  }
+
+  collectParallax();
+  requestMotion();
+  window.addEventListener("scroll", requestMotion, { passive: true });
+  window.addEventListener("resize", function () {
+    collectParallax();
+    requestMotion();
+  });
+  window.addEventListener("load", function () {
+    collectParallax();
+    requestMotion();
+  });
+
+  if (motionOK && finePointer) {
+    document.querySelectorAll(".cover-cta .btn").forEach(function (btn) {
+      btn.addEventListener("mousemove", function (e) {
+        var r = btn.getBoundingClientRect();
+        var dx = (e.clientX - r.left - r.width / 2) / (r.width / 2);
+        var dy = (e.clientY - r.top - r.height / 2) / (r.height / 2);
+        btn.style.transform = "translate(" + (dx * 5).toFixed(1) + "px," + (dy * 4).toFixed(1) + "px)";
+      });
+      btn.addEventListener("mouseleave", function () {
+        btn.style.transform = "";
+      });
+    });
+
+    var tiltSelector = ".wall-card, .mode";
+    document.addEventListener("mousemove", function (e) {
+      var card = e.target.closest && e.target.closest(tiltSelector);
+      if (!card) return;
+      var r = card.getBoundingClientRect();
+      var dx = (e.clientX - r.left - r.width / 2) / (r.width / 2);
+      var dy = (e.clientY - r.top - r.height / 2) / (r.height / 2);
+      card.style.transform = "perspective(700px) rotateX(" + (-dy * 2.4).toFixed(2) + "deg) rotateY(" + (dx * 2.8).toFixed(2) + "deg) translateY(-2px)";
+    });
+    document.addEventListener("mouseout", function (e) {
+      var card = e.target.closest && e.target.closest(tiltSelector);
+      if (card && (!e.relatedTarget || !card.contains(e.relatedTarget))) {
+        card.style.transform = "";
+      }
+    });
+  }
+
+  var wallAnimated = 0;
+  var origWallN = els.wallN;
+  var renderWallCount = function (count) {
+    if (motionOK && count !== wallAnimated && count > 0) {
+      animateNumber(origWallN, count, "", 700);
+    } else {
+      origWallN.textContent = String(count);
+    }
+    wallAnimated = count;
+  };
+
+  window.addEventListener("load", function () {
+    ensurePdfLib().catch(function () {});
   });
 
   loadWall();

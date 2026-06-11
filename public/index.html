@@ -14,10 +14,12 @@
 </head>
 <body>
 
+<div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+
 <div class="bg-leaks" aria-hidden="true">
-  <div class="leak l1"></div>
-  <div class="leak l2"></div>
-  <div class="leak l3"></div>
+  <div class="leak l1" data-par="-0.05"></div>
+  <div class="leak l2" data-par="-0.09"></div>
+  <div class="leak l3" data-par="0.06"></div>
 </div>
 <div class="grain" aria-hidden="true"></div>
 
@@ -36,7 +38,7 @@
 </nav>
 
 <header class="cover" id="cover">
-  <span class="cover-delta" aria-hidden="true">▲</span>
+  <span class="cover-delta" id="cover-delta" aria-hidden="true">▲</span>
   <p class="eyebrow"><span class="bar"></span>Externia × AEGVE · A Coruña · 12.06.2026</p>
   <h1>El <em class="grad-text">taller</em>.</h1>
   <p class="lede">Hace 72 horas salió el modelo de IA más potente jamás disponible al público. Hoy lo ponemos a trabajar para esta sala.</p>
@@ -63,7 +65,7 @@
   </div>
 
   <article class="fase reveal">
-    <div class="fase-num" aria-hidden="true">1</div>
+    <div class="fase-num" data-par="0.08" aria-hidden="true">1</div>
     <div class="fase-body">
       <p class="fase-eyebrow">Fase 1 · El anuncio · 09.06.2026</p>
       <h3>El primer Mythos abierto al público.</h3>
@@ -76,7 +78,7 @@
   </article>
 
   <article class="fase reveal">
-    <div class="fase-num" aria-hidden="true">2</div>
+    <div class="fase-num" data-par="0.08" aria-hidden="true">2</div>
     <div class="fase-body">
       <p class="fase-eyebrow">Fase 2 · La seguridad</p>
       <h3>Mythos domesticado.</h3>
@@ -89,7 +91,7 @@
   </article>
 
   <article class="fase reveal">
-    <div class="fase-num" aria-hidden="true">3</div>
+    <div class="fase-num" data-par="0.08" aria-hidden="true">3</div>
     <div class="fase-body">
       <p class="fase-eyebrow">Fase 3 · El rendimiento</p>
       <h3>Supera las expectativas.</h3>
@@ -102,7 +104,7 @@
   </article>
 
   <article class="fase reveal">
-    <div class="fase-num" aria-hidden="true">4</div>
+    <div class="fase-num" data-par="0.08" aria-hidden="true">4</div>
     <div class="fase-body">
       <p class="fase-eyebrow">Fase 4 · El precio y el pero</p>
       <h3>La capacidad punta, como producto premium.</h3>
@@ -152,7 +154,7 @@
         <button class="sector" type="button" data-sector="agencia" role="radio" aria-checked="false">Agencia · TMC</button>
         <button class="sector" type="button" data-sector="empresa" role="radio" aria-checked="false">Empresa</button>
       </div>
-      <p class="sector-hint" id="sector-hint">Entregable: one-pager comercial para captar cuentas corporativas.</p>
+      <p class="sector-hint" id="sector-hint">Entregable: one-pager comercial para captar cuentas corporativas, vestido con tu marca.</p>
     </div>
 
     <div class="panel-body" id="panel-datos" hidden>
@@ -214,6 +216,7 @@
 
     <div class="bench-actions" id="bench-actions" hidden>
       <button class="btn btn-grad" type="button" id="pin-btn">Clavar en el muro</button>
+      <button class="btn btn-ghost" type="button" id="download-btn">Descargar PDF</button>
       <button class="btn btn-ghost" type="button" id="again-btn">Nuevo encargo</button>
     </div>
   </div>
@@ -257,7 +260,10 @@
 <div class="modal" id="modal" hidden>
   <div class="modal-backdrop" id="modal-backdrop"></div>
   <div class="modal-box">
-    <button class="modal-close" type="button" id="modal-close" aria-label="Cerrar">Cerrar</button>
+    <div class="modal-bar">
+      <button class="modal-action" type="button" id="modal-download">Descargar PDF</button>
+      <button class="modal-action" type="button" id="modal-close" aria-label="Cerrar">Cerrar</button>
+    </div>
     <article class="paper modal-paper" id="modal-paper">
       <header class="paper-head">
         <span class="paper-type" id="modal-type">Documento</span>
