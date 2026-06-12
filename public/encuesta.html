@@ -20,106 +20,176 @@
 <div class="grain" aria-hidden="true"></div>
 
 <main class="survey">
-  <p class="eyebrow"><span class="bar"></span>Externia × AEGVE · La sala habla</p>
-  <h1 class="survey-title">Dos minutos.<br /><span class="grad-text">Tus respuestas dirigen la charla.</span></h1>
 
-  <form id="survey-form" autocomplete="off">
+  <div class="survey-progress" id="progress-wrap" hidden>
+    <span class="progress-label" id="progress-label"></span>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+  </div>
 
-    <div class="sq">
-      <label class="field-label" for="s-nick">1 · Tu nombre o nick</label>
-      <input class="field" type="text" id="s-nick" maxlength="30" placeholder="Como quieras aparecer en pantalla" required />
+  <section class="step is-active" data-step="nick">
+    <p class="eyebrow"><span class="bar"></span>Externia × AEGVE · La sala habla</p>
+    <h1 class="survey-title">Nueve preguntas.<br /><span class="grad-text">Tus respuestas dirigen la charla.</span></h1>
+    <label class="field-label" for="s-nick">Tu nombre o nick</label>
+    <input class="field" type="text" id="s-nick" maxlength="30" placeholder="Como quieras aparecer en pantalla" autocomplete="off" />
+    <p class="survey-error" id="nick-error" hidden>Necesitamos un nombre para empezar.</p>
+    <button class="btn btn-grad btn-make" type="button" id="start-btn">Empezar</button>
+  </section>
+
+  <section class="step" data-step="q2">
+    <p class="step-q">¿Sabes lo que es un prompt?</p>
+    <div class="opts opts-stack" data-q="q2" data-type="single">
+      <button type="button" class="opt" data-v="a">Sí, seguro</button>
+      <button type="button" class="opt" data-v="b">Me suena, pero no lo tengo claro</button>
+      <button type="button" class="opt" data-v="c">No lo sé</button>
     </div>
+  </section>
 
-    <div class="sq">
-      <p class="field-label">2 · ¿Sabes lo que es un prompt?</p>
-      <div class="opts" data-q="q2" data-type="single">
-        <button type="button" class="opt" data-v="a">Sí, seguro</button>
-        <button type="button" class="opt" data-v="b">Me suena, pero no lo tengo claro</button>
-        <button type="button" class="opt" data-v="c">No lo sé</button>
-      </div>
+  <section class="step" data-step="q3">
+    <p class="step-q">¿Usas alguna IA en tu día a día?</p>
+    <div class="opts opts-stack" data-q="q3" data-type="single">
+      <button type="button" class="opt" data-v="si">Sí</button>
+      <button type="button" class="opt" data-v="no">No</button>
     </div>
+  </section>
 
-    <div class="sq">
-      <p class="field-label">3 · ¿Usas alguna IA en tu día a día?</p>
-      <div class="opts" data-q="q3" data-type="single">
-        <button type="button" class="opt" data-v="si">Sí</button>
-        <button type="button" class="opt" data-v="no">No</button>
-      </div>
+  <section class="step" data-step="q4">
+    <p class="step-q">¿Qué IA usas?</p>
+    <p class="multi-note">Elige todas las que toquen.</p>
+    <div class="opts" data-q="q4" data-type="multi">
+      <button type="button" class="opt" data-v="chatgpt">ChatGPT</button>
+      <button type="button" class="opt" data-v="copilot">Microsoft Copilot</button>
+      <button type="button" class="opt" data-v="gemini">Gemini</button>
+      <button type="button" class="opt" data-v="perplexity">Perplexity</button>
+      <button type="button" class="opt" data-v="claude">Claude</button>
+      <button type="button" class="opt" data-v="notebooklm">NotebookLM</button>
+      <button type="button" class="opt" data-v="otra">Otra</button>
     </div>
+    <button class="btn btn-grad btn-next" type="button" data-next>Siguiente</button>
+  </section>
 
-    <div class="sq" id="sq-q4" hidden>
-      <p class="field-label">4 · ¿Qué IA usas? <span class="multi-note">elige todas las que toquen</span></p>
-      <div class="opts" data-q="q4" data-type="multi">
-        <button type="button" class="opt" data-v="chatgpt">ChatGPT</button>
-        <button type="button" class="opt" data-v="copilot">Microsoft Copilot</button>
-        <button type="button" class="opt" data-v="gemini">Gemini</button>
-        <button type="button" class="opt" data-v="perplexity">Perplexity</button>
-        <button type="button" class="opt" data-v="claude">Claude</button>
-        <button type="button" class="opt" data-v="notebooklm">NotebookLM</button>
-        <button type="button" class="opt" data-v="otra">Otra</button>
-      </div>
+  <section class="step" data-step="q5">
+    <p class="step-q">¿Para qué la usas?</p>
+    <p class="multi-note">Elige todas las que toquen.</p>
+    <div class="opts" data-q="q5" data-type="multi">
+      <button type="button" class="opt" data-v="investigar">Investigar o buscar información</button>
+      <button type="button" class="opt" data-v="traducir">Traducir textos</button>
+      <button type="button" class="opt" data-v="correos">Redactar correos</button>
+      <button type="button" class="opt" data-v="presentaciones">Hacer presentaciones</button>
+      <button type="button" class="opt" data-v="presupuestos">Hacer presupuestos</button>
     </div>
+    <button class="btn btn-grad btn-next" type="button" data-next>Siguiente</button>
+  </section>
 
-    <div class="sq" id="sq-q5" hidden>
-      <p class="field-label">5 · ¿Para qué la usas? <span class="multi-note">elige todas las que toquen</span></p>
-      <div class="opts" data-q="q5" data-type="multi">
-        <button type="button" class="opt" data-v="investigar">Investigar o buscar información</button>
-        <button type="button" class="opt" data-v="traducir">Traducir textos</button>
-        <button type="button" class="opt" data-v="correos">Redactar correos</button>
-        <button type="button" class="opt" data-v="presentaciones">Hacer presentaciones</button>
-        <button type="button" class="opt" data-v="presupuestos">Hacer presupuestos</button>
-      </div>
+  <section class="step" data-step="q6">
+    <p class="step-q">¿Sabes qué es la IA agéntica?</p>
+    <div class="opts opts-stack" data-q="q6" data-type="single">
+      <button type="button" class="opt" data-v="a">Sí, seguro</button>
+      <button type="button" class="opt" data-v="b">Me suena, pero no lo tengo claro</button>
+      <button type="button" class="opt" data-v="c">No lo sé</button>
     </div>
+  </section>
 
-    <div class="sq">
-      <p class="field-label">6 · ¿Sabes qué es la IA agéntica?</p>
-      <div class="opts" data-q="q6" data-type="single">
-        <button type="button" class="opt" data-v="a">Sí, seguro</button>
-        <button type="button" class="opt" data-v="b">Me suena, pero no lo tengo claro</button>
-        <button type="button" class="opt" data-v="c">No lo sé</button>
-      </div>
+  <section class="step" data-step="q7">
+    <p class="step-q">¿Has creado o usado algún agente?</p>
+    <div class="opts opts-stack" data-q="q7" data-type="single">
+      <button type="button" class="opt" data-v="si">Sí</button>
+      <button type="button" class="opt" data-v="no">No</button>
     </div>
+  </section>
 
-    <div class="sq">
-      <p class="field-label">7 · ¿Has creado o usado algún agente?</p>
-      <div class="opts" data-q="q7" data-type="single">
-        <button type="button" class="opt" data-v="si">Sí</button>
-        <button type="button" class="opt" data-v="no">No</button>
-      </div>
+  <section class="step" data-step="q8">
+    <p class="step-q">¿Para qué lo has usado?</p>
+    <p class="multi-note">Elige todas las que toquen.</p>
+    <div class="opts" data-q="q8" data-type="multi">
+      <button type="button" class="opt" data-v="correo">Automatizar u organizar mi correo</button>
+      <button type="button" class="opt" data-v="presentaciones">Generar presentaciones</button>
+      <button type="button" class="opt" data-v="clientes">Contacto con clientes o personas</button>
+      <button type="button" class="opt" data-v="otro">Otro</button>
     </div>
+    <button class="btn btn-grad btn-next" type="button" data-next>Siguiente</button>
+  </section>
 
-    <div class="sq" id="sq-q8" hidden>
-      <p class="field-label">8 · ¿Para qué lo has usado? <span class="multi-note">elige todas las que toquen</span></p>
-      <div class="opts" data-q="q8" data-type="multi">
-        <button type="button" class="opt" data-v="correo">Automatizar u organizar mi correo</button>
-        <button type="button" class="opt" data-v="presentaciones">Generar presentaciones</button>
-        <button type="button" class="opt" data-v="clientes">Contacto con clientes o personas</button>
-        <button type="button" class="opt" data-v="otro">Otro</button>
-      </div>
-    </div>
+  <section class="step" data-step="q9">
+    <p class="step-q">¿Qué te gustaría que hiciese la IA que todavía no puede?</p>
+    <p class="multi-note">O al menos, no con tu suscripción. Tu respuesta saldrá en pantalla.</p>
+    <textarea class="field field-area" id="s-q9" rows="4" maxlength="400" placeholder="Pide sin miedo."></textarea>
+    <p class="survey-error" id="q9-error" hidden>Cuéntanos algo, aunque sea corto.</p>
+    <button class="btn btn-grad btn-next" type="button" id="send-btn">Enviar a la pantalla</button>
+  </section>
 
-    <div class="sq">
-      <label class="field-label" for="s-q9">9 · ¿Qué te gustaría que hiciese la IA que todavía no puede?</label>
-      <textarea class="field field-area" id="s-q9" rows="4" maxlength="400" placeholder="O al menos, no con tu suscripción. Tu respuesta saldrá en pantalla." required></textarea>
-    </div>
-
-    <p class="survey-error" id="survey-error" hidden>Falta alguna respuesta marcada en rojo.</p>
-    <button class="btn btn-grad btn-make" type="submit" id="survey-send">Enviar a la pantalla</button>
-  </form>
-
-  <div class="survey-done" id="survey-done" hidden>
+  <section class="step" data-step="done">
     <p class="survey-done-big">Clavado.</p>
     <p class="survey-done-sub">Tu respuesta ya está en la pantalla de la sala.</p>
     <a class="btn btn-ghost" href="/#sala">Ver la sala en directo</a>
-    <button class="btn btn-ghost" type="button" id="survey-again">Corregir mi respuesta</button>
-  </div>
+    <button class="btn btn-ghost" type="button" id="survey-again">Corregir mis respuestas</button>
+  </section>
+
+  <p class="step-back"><a href="#" id="back-link" hidden>Anterior</a></p>
 
   <p class="cierre-small survey-foot">El taller · Externia × AEGVE · A Coruña · 12.06.2026</p>
 </main>
 
 <script>
 (function () {
-  var answers = { q4: [], q5: [], q8: [] };
+  var answers = { q2: null, q3: null, q4: [], q5: [], q6: null, q7: null, q8: [] };
+  var nick = "";
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+  var current = "nick";
+
+  function flow() {
+    var order = ["nick", "q2", "q3"];
+    if (answers.q3 === "si") order.push("q4", "q5");
+    order.push("q6", "q7");
+    if (answers.q7 === "si") order.push("q8");
+    order.push("q9", "done");
+    return order;
+  }
+
+  function show(name) {
+    current = name;
+    steps.forEach(function (s) {
+      s.classList.toggle("is-active", s.dataset.step === name);
+    });
+    var order = flow();
+    var idx = order.indexOf(name);
+    var wrap = document.getElementById("progress-wrap");
+    var asking = name !== "nick" && name !== "done";
+    wrap.hidden = !asking;
+    document.getElementById("back-link").hidden = !asking;
+    if (asking) {
+      var total = order.length - 2;
+      document.getElementById("progress-label").textContent = idx + " / " + total;
+      document.getElementById("progress-fill").style.width = Math.round((idx / total) * 100) + "%";
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function next() {
+    var order = flow();
+    var idx = order.indexOf(current);
+    if (idx < order.length - 1) show(order[idx + 1]);
+  }
+
+  function back() {
+    var order = flow();
+    var idx = order.indexOf(current);
+    if (idx > 0) show(order[idx - 1]);
+  }
+
+  function sendPartial(final) {
+    var body = {
+      nick: nick,
+      q2: answers.q2, q3: answers.q3, q4: answers.q4, q5: answers.q5,
+      q6: answers.q6, q7: answers.q7, q8: answers.q8,
+      q9: document.getElementById("s-q9").value.trim()
+    };
+    return fetch("/api/encuesta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json(); }).catch(function () { return final ? null : { ok: true }; });
+  }
 
   document.querySelectorAll(".opts").forEach(function (group) {
     var q = group.dataset.q;
@@ -133,70 +203,69 @@
           group.querySelectorAll(".opt").forEach(function (b) { b.classList.remove("is-on"); });
           btn.classList.add("is-on");
           answers[q] = btn.dataset.v;
-          if (q === "q3") {
-            document.getElementById("sq-q4").hidden = btn.dataset.v !== "si";
-            document.getElementById("sq-q5").hidden = btn.dataset.v !== "si";
-          }
-          if (q === "q7") {
-            document.getElementById("sq-q8").hidden = btn.dataset.v !== "si";
-          }
+          sendPartial(false);
+          setTimeout(next, 350);
         }
-        group.classList.remove("is-missing");
       });
     });
   });
 
-  var form = document.getElementById("survey-form");
-  form.addEventListener("submit", async function (e) {
-    e.preventDefault();
-    var nick = document.getElementById("s-nick").value.trim();
-    var q9 = document.getElementById("s-q9").value.trim();
-    var missing = false;
-    ["q2", "q3", "q6", "q7"].forEach(function (q) {
-      var group = document.querySelector('.opts[data-q="' + q + '"]');
-      if (!answers[q]) {
-        group.classList.add("is-missing");
-        missing = true;
-      }
+  document.querySelectorAll("[data-next]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      sendPartial(false);
+      next();
     });
-    if (!nick || q9.length < 3 || missing) {
-      document.getElementById("survey-error").hidden = false;
+  });
+
+  document.getElementById("start-btn").addEventListener("click", function () {
+    nick = document.getElementById("s-nick").value.trim();
+    if (!nick) {
+      document.getElementById("nick-error").hidden = false;
       return;
     }
-    document.getElementById("survey-error").hidden = true;
-    var btn = document.getElementById("survey-send");
+    document.getElementById("nick-error").hidden = true;
+    sendPartial(false);
+    next();
+  });
+
+  document.getElementById("s-nick").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      document.getElementById("start-btn").click();
+    }
+  });
+
+  document.getElementById("send-btn").addEventListener("click", async function () {
+    var q9 = document.getElementById("s-q9").value.trim();
+    if (q9.length < 3) {
+      document.getElementById("q9-error").hidden = false;
+      return;
+    }
+    document.getElementById("q9-error").hidden = true;
+    var btn = this;
     btn.disabled = true;
     btn.textContent = "Enviando";
-    try {
-      var res = await fetch("/api/encuesta", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nick: nick,
-          q2: answers.q2, q3: answers.q3, q4: answers.q4, q5: answers.q5,
-          q6: answers.q6, q7: answers.q7, q8: answers.q8, q9: q9
-        })
-      });
-      var json = await res.json();
-      if (!json || !json.ok) throw new Error("bad");
-      form.hidden = true;
-      document.getElementById("survey-done").hidden = false;
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (err) {
-      btn.disabled = false;
-      btn.textContent = "Enviar a la pantalla";
-      document.getElementById("survey-error").textContent = "No se ha podido enviar. Reintenta en unos segundos.";
-      document.getElementById("survey-error").hidden = false;
+    var json = await sendPartial(true);
+    btn.disabled = false;
+    btn.textContent = "Enviar a la pantalla";
+    if (json && json.ok) {
+      show("done");
+    } else {
+      document.getElementById("q9-error").textContent = "No se ha podido enviar. Reintenta en unos segundos.";
+      document.getElementById("q9-error").hidden = false;
     }
+  });
+
+  document.getElementById("back-link").addEventListener("click", function (e) {
+    e.preventDefault();
+    back();
   });
 
   document.getElementById("survey-again").addEventListener("click", function () {
-    document.getElementById("survey-done").hidden = true;
-    form.hidden = false;
-    var btn = document.getElementById("survey-send");
-    btn.disabled = false;
-    btn.textContent = "Enviar a la pantalla";
+    show("q2");
   });
+
+  show("nick");
 })();
 </script>
 </body>

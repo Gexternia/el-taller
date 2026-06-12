@@ -1136,19 +1136,23 @@
     if (!hasData) return;
     SALA_POLLS.forEach(function (p) {
       var counts = agg[p.q] || {};
-      var basis = agg.total;
+      var basis = 0;
       if (p.base === "max") {
-        basis = 1;
         p.opts.forEach(function (opt) {
           basis = Math.max(basis, counts[opt[0]] || 0);
+        });
+      } else {
+        p.opts.forEach(function (opt) {
+          basis += counts[opt[0]] || 0;
         });
       }
       p.opts.forEach(function (opt) {
         var val = counts[opt[0]] || 0;
+        var pct = Math.round((val / Math.max(1, basis)) * 100);
         var fill = salaEls.grid.querySelector('[data-key="' + p.q + "." + opt[0] + '"]');
         var num = salaEls.grid.querySelector('[data-numkey="' + p.q + "." + opt[0] + '"]');
-        if (fill) fill.style.width = Math.round((val / Math.max(1, basis)) * 100) + "%";
-        if (num) num.textContent = String(val);
+        if (fill) fill.style.width = pct + "%";
+        if (num) num.textContent = p.base === "max" ? String(val) : val + " · " + pct + "%";
       });
     });
     var q9Key = agg.q9.length + "·" + (agg.q9[0] ? agg.q9[0].nick + agg.q9[0].text : "");

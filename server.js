@@ -103,7 +103,7 @@ const POLL_MULTI = {
 function cleanPollEntry(b) {
   const nick = String(b.nick || "").trim().slice(0, 30);
   const q9 = String(b.q9 || "").trim().slice(0, 400);
-  if (!nick || q9.length < 3) return null;
+  if (!nick) return null;
   const entry = { nick, q9 };
   for (const key of Object.keys(POLL_SINGLE)) {
     const val = String(b[key] || "").toLowerCase();
@@ -151,7 +151,7 @@ app.get("/api/encuesta", (req, res) => {
     });
   }
   agg.q9 = poll
-    .slice()
+    .filter((p) => p.q9 && p.q9.length >= 3)
     .sort((a, b) => b.createdAt - a.createdAt)
     .map((p) => ({ nick: p.nick, text: p.q9, time: p.time }))
     .slice(0, 200);
