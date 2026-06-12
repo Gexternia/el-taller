@@ -10,10 +10,12 @@ const PRIMARY_MODEL = "claude-fable-5";
 const FALLBACK_MODEL = "claude-opus-4-8";
 const DATA_DIR = path.join(__dirname, "data");
 const WALL_FILE = path.join(DATA_DIR, "wall.json");
+const POLL_FILE = path.join(DATA_DIR, "encuesta.json");
+const RESET_KEY = "delta2026";
 const MAX_ACTIVE = 3;
 
 app.use(express.json({ limit: "6mb" }));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "public"), { extensions: ["html"] }));
 
 const SEED_WALL = [
   {
@@ -75,6 +77,106 @@ function saveWall() {
     fs.writeFileSync(WALL_FILE, JSON.stringify(wall, null, 2));
   } catch (e) {}
 }
+
+let poll = [];
+try {
+  poll = JSON.parse(fs.readFileSync(POLL_FILE, "utf8"));
+} catch (e) {
+  poll = [];
+}
+if (!Array.isArray(poll)) poll = [];
+
+function savePoll() {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(POLL_FILE, JSON.stringify(poll, null, 2));
+  } catch (e) {}
+}
+
+const POLL_SINGLE = { q2: ["a", "b", "c"], q3: ["si", "no"], q6: ["a", "b", "c"], q7: ["si", "no"] };
+const POLL_MULTI = {
+  q4: ["chatgpt", "copilot", "gemini", "perplexity", "claude", "notebooklm", "otra"],
+  q5: ["investigar", "traducir", "correos", "presentaciones", "presupuestos"],
+  q8: ["correo", "presentaciones", "clientes", "otro"]
+};
+
+function cleanPollEntry(b) {
+  const nick = String(b.nick || "").trim().slice(0, 30);
+  const q9 = String(b.q9 || "").trim().slice(0, 400);
+  if (!nick || q9.length < 3) return null;
+  const entry = { nick, q9 };
+  for (const key of Object.keys(POLL_SINGLE)) {
+    const val = String(b[key] || "").toLowerCase();
+    entry[key] = POLL_SINGLE[key].includes(val) ? val : null;
+  }
+  for (const key of Object.keys(POLL_MULTI)) {
+    const arr = Array.isArray(b[key]) ? b[key] : [];
+    entry[key] = arr.map((v) => String(v).toLowerCase()).filter((v) => POLL_MULTI[key].includes(v)).slice(0, 10);
+  }
+  entry.time = new Date().toLocaleTimeString("es-ES", { timeZone: "Europe/Madrid", hour: "2-digit", minute: "2-digit" });
+  entry.createdAt = Date.now();
+  return entry;
+}
+
+app.post("/api/encuesta", (req, res) => {
+  const entry = cleanPollEntry(req.body || {});
+  if (!entry) {
+    res.status(400).json({ ok: false });
+    return;
+  }
+  const idx = poll.findIndex((p) => p.nick.toLowerCase() === entry.nick.toLowerCase());
+  if (idx >= 0) poll[idx] = entry;
+  else poll.push(entry);
+  if (poll.length > 500) poll.shift();
+  savePoll();
+  res.json({ ok: true, total: poll.length });
+});
+
+app.get("/api/encuesta", (req, res) => {
+  const agg = { total: poll.length };
+  for (const key of Object.keys(POLL_SINGLE)) {
+    agg[key] = {};
+    POLL_SINGLE[key].forEach((opt) => (agg[key][opt] = 0));
+    poll.forEach((p) => {
+      if (p[key] && agg[key][p[key]] !== undefined) agg[key][p[key]] += 1;
+    });
+  }
+  for (const key of Object.keys(POLL_MULTI)) {
+    agg[key] = {};
+    POLL_MULTI[key].forEach((opt) => (agg[key][opt] = 0));
+    poll.forEach((p) => {
+      (p[key] || []).forEach((v) => {
+        if (agg[key][v] !== undefined) agg[key][v] += 1;
+      });
+    });
+  }
+  agg.q9 = poll
+    .slice()
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .map((p) => ({ nick: p.nick, text: p.q9, time: p.time }))
+    .slice(0, 200);
+  res.json(agg);
+});
+
+app.post("/api/encuesta-reset", (req, res) => {
+  if (String((req.body || {}).clave) !== RESET_KEY) {
+    res.status(403).json({ ok: false });
+    return;
+  }
+  poll = [];
+  savePoll();
+  res.json({ ok: true });
+});
+
+app.post("/api/wall-reset", (req, res) => {
+  if (String((req.body || {}).clave) !== RESET_KEY) {
+    res.status(403).json({ ok: false });
+    return;
+  }
+  wall = SEED_WALL.slice();
+  saveWall();
+  res.json({ ok: true });
+});
 
 function sanitizeHtml(html) {
   return String(html)
@@ -187,6 +289,20 @@ function buildPrompt(mode, sector, input) {
     appendStyleGuide(parts, input);
     return { docType, userPrompt: parts.join("\n\n") };
   }
+  if (mode === "sala") {
+    const docType = "Informe de la sala";
+    const parts = [
+      "Eres el analista de la jornada AEGVE de A Coruña. Produce un informe ejecutivo de la sala a partir de la encuesta en vivo que acaban de responder los asistentes desde sus móviles.",
+      "Estructura obligatoria: 1) La foto de la sala: madurez en IA con una tabla breve de cifras clave. 2) Lo que la sala le pide a la IA: agrupa las respuestas libres en 3 a 5 temas, citando entre comillas las más expresivas con el nick de su autor. 3) Solo si hay datos de registro: cruza los nicks con nombres y empresas cuando el parecido sea razonable, di 'probablemente' cuando no sea seguro, y señala a qué asistentes o empresas concretas les interesa cada tema. 4) Tres movimientos recomendados para el ponente en lo que queda de charla.",
+      "Encuesta de la sala:",
+      '"""' + String(input.sala || "").slice(0, 12000) + '"""'
+    ];
+    if (input.registro) {
+      parts.push("Registro de asistentes (nombre, empresa, email):");
+      parts.push('"""' + String(input.registro).slice(0, 6000) + '"""');
+    }
+    return { docType, userPrompt: parts.join("\n\n") };
+  }
   const docType = "Encargo libre";
   const parts = [
     "Encargo libre de un asistente de la jornada. Cúmplelo tal cual se pide y entrega el resultado terminado.",
@@ -257,7 +373,7 @@ async function streamAnthropic(model, system, maxTokens, userPrompt, onDelta, si
 
 app.post("/api/generate", async (req, res) => {
   const body = req.body || {};
-  const mode = ["web", "datos", "libre"].includes(body.mode) ? body.mode : null;
+  const mode = ["web", "datos", "libre", "sala"].includes(body.mode) ? body.mode : null;
   if (!mode) {
     res.status(400).json({ ok: false });
     return;
@@ -288,9 +404,9 @@ app.post("/api/generate", async (req, res) => {
   const { docType, userPrompt } = buildPrompt(mode, String(body.sector || ""), body.input || {});
   const isLibre = mode === "libre";
   const system = isLibre ? SYSTEM_LIBRE : SYSTEM_DOC;
-  const maxTokens = isLibre ? 6000 : 1800;
+  const maxTokens = isLibre ? 6000 : mode === "sala" ? 3500 : 1800;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), isLibre ? 150000 : 90000);
+  const timer = setTimeout(() => controller.abort(), isLibre || mode === "sala" ? 150000 : 90000);
   const startedAt = Date.now();
   let model = PRIMARY_MODEL;
   let emitted = 0;

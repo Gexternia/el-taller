@@ -29,6 +29,7 @@
     <span>Externia</span>
   </a>
   <div class="topnav-links">
+    <a href="#sala">00 Sala</a>
     <a href="#historia">01 Historia</a>
     <a href="#taller">02 Taller</a>
     <a href="#muro">03 Muro</a>
@@ -56,6 +57,43 @@
 </header>
 
 <main>
+
+<section class="section" id="sala">
+  <div class="section-head reveal">
+    <p class="eyebrow"><span class="bar"></span>00 · La sala en directo</p>
+    <h2>Quién hay <span class="grad-text">en la sala.</span></h2>
+    <p class="section-sub">Contesta desde el móvil. Tus respuestas dirigen la charla.</p>
+  </div>
+
+  <div class="sala-top reveal">
+    <a class="sala-qr" href="/encuesta" target="_blank" rel="noopener">
+      <img id="sala-qr-img" alt="QR de la encuesta" width="220" height="220" />
+      <span class="sala-url" id="sala-url">/encuesta</span>
+    </a>
+    <div class="sala-count">
+      <span class="wall-n grad-text" id="sala-n">0</span>
+      <span class="wall-label">respuestas de la sala</span>
+    </div>
+  </div>
+
+  <p class="sala-empty" id="sala-empty">La sala aún no ha hablado.</p>
+
+  <div class="sala-grid" id="sala-grid" hidden></div>
+
+  <div class="sala-q9" id="sala-q9" hidden>
+    <p class="fase-eyebrow">La pregunta 9 · Lo que la sala le pide a la IA</p>
+    <div class="quotes" id="sala-quotes"></div>
+  </div>
+
+  <div class="sala-director" id="sala-director" hidden>
+    <div class="upload-row">
+      <button class="btn btn-ghost btn-small" type="button" id="registro-btn">Cruzar con registro (CSV)</button>
+      <input type="file" id="registro-file" accept=".csv,.txt" hidden />
+      <span class="file-chip" id="registro-chip" hidden></span>
+      <button class="btn btn-grad btn-small" type="button" id="informe-btn">Fabricar el informe de la sala</button>
+    </div>
+  </div>
+</section>
 
 <section class="section" id="historia">
   <div class="section-head reveal">

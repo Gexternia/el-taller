@@ -931,6 +931,9 @@
       if (k < 1) requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
+    setTimeout(function () {
+      el.textContent = target + suffix;
+    }, duration + 150);
   }
 
   if (motionOK) {
@@ -1054,6 +1057,191 @@
   window.addEventListener("load", function () {
     ensurePdfLib().catch(function () {});
   });
+
+  var DIRECTOR = new URLSearchParams(location.search).get("director") === "1";
+
+  var salaEls = {
+    n: document.getElementById("sala-n"),
+    empty: document.getElementById("sala-empty"),
+    grid: document.getElementById("sala-grid"),
+    q9: document.getElementById("sala-q9"),
+    quotes: document.getElementById("sala-quotes"),
+    director: document.getElementById("sala-director"),
+    registroBtn: document.getElementById("registro-btn"),
+    registroFile: document.getElementById("registro-file"),
+    registroChip: document.getElementById("registro-chip"),
+    informeBtn: document.getElementById("informe-btn"),
+    qrImg: document.getElementById("sala-qr-img"),
+    url: document.getElementById("sala-url")
+  };
+
+  var SALA_POLLS = [
+    { q: "q2", title: "¿Sabes lo que es un prompt?", opts: [["a", "Sí, seguro"], ["b", "Me suena"], ["c", "No lo sé"]], base: "total" },
+    { q: "q6", title: "¿Sabes qué es la IA agéntica?", opts: [["a", "Sí, seguro"], ["b", "Me suena"], ["c", "No lo sé"]], base: "total" },
+    { q: "q3", title: "¿Usas IA en tu día a día?", opts: [["si", "Sí"], ["no", "No"]], base: "total" },
+    { q: "q7", title: "¿Has creado o usado un agente?", opts: [["si", "Sí"], ["no", "No"]], base: "total" },
+    { q: "q4", title: "Qué IA usa la sala", opts: [["chatgpt", "ChatGPT"], ["copilot", "Copilot"], ["gemini", "Gemini"], ["perplexity", "Perplexity"], ["claude", "Claude"], ["notebooklm", "NotebookLM"], ["otra", "Otra"]], base: "max" },
+    { q: "q5", title: "Para qué la usan", opts: [["investigar", "Investigar"], ["traducir", "Traducir"], ["correos", "Correos"], ["presentaciones", "Presentaciones"], ["presupuestos", "Presupuestos"]], base: "max" }
+  ];
+
+  var lastAgg = null;
+  var lastSalaTotal = -1;
+  var lastQ9Key = "";
+  var registroText = null;
+
+  function buildSalaGrid() {
+    SALA_POLLS.forEach(function (p) {
+      var box = document.createElement("div");
+      box.className = "poll";
+      var title = document.createElement("p");
+      title.className = "poll-q";
+      title.textContent = p.title;
+      box.appendChild(title);
+      p.opts.forEach(function (opt) {
+        var row = document.createElement("div");
+        row.className = "poll-row";
+        var label = document.createElement("span");
+        label.className = "poll-label";
+        label.textContent = opt[1];
+        var track = document.createElement("div");
+        track.className = "poll-track";
+        var fill = document.createElement("div");
+        fill.className = "poll-fill";
+        fill.dataset.key = p.q + "." + opt[0];
+        var num = document.createElement("span");
+        num.className = "poll-n";
+        num.dataset.numkey = p.q + "." + opt[0];
+        num.textContent = "0";
+        track.appendChild(fill);
+        row.appendChild(label);
+        row.appendChild(track);
+        row.appendChild(num);
+        box.appendChild(row);
+      });
+      salaEls.grid.appendChild(box);
+    });
+  }
+
+  function updateSala(agg) {
+    lastAgg = agg;
+    if (agg.total !== lastSalaTotal) {
+      if (motionOK && agg.total > 0) animateNumber(salaEls.n, agg.total, "", 700);
+      else salaEls.n.textContent = String(agg.total);
+      lastSalaTotal = agg.total;
+    }
+    var hasData = agg.total > 0;
+    salaEls.empty.hidden = hasData;
+    salaEls.grid.hidden = !hasData;
+    salaEls.q9.hidden = !hasData || !agg.q9.length;
+    if (!hasData) return;
+    SALA_POLLS.forEach(function (p) {
+      var counts = agg[p.q] || {};
+      var basis = agg.total;
+      if (p.base === "max") {
+        basis = 1;
+        p.opts.forEach(function (opt) {
+          basis = Math.max(basis, counts[opt[0]] || 0);
+        });
+      }
+      p.opts.forEach(function (opt) {
+        var val = counts[opt[0]] || 0;
+        var fill = salaEls.grid.querySelector('[data-key="' + p.q + "." + opt[0] + '"]');
+        var num = salaEls.grid.querySelector('[data-numkey="' + p.q + "." + opt[0] + '"]');
+        if (fill) fill.style.width = Math.round((val / Math.max(1, basis)) * 100) + "%";
+        if (num) num.textContent = String(val);
+      });
+    });
+    var q9Key = agg.q9.length + "·" + (agg.q9[0] ? agg.q9[0].nick + agg.q9[0].text : "");
+    if (q9Key !== lastQ9Key) {
+      lastQ9Key = q9Key;
+      salaEls.quotes.innerHTML = "";
+      agg.q9.forEach(function (item) {
+        var card = document.createElement("div");
+        card.className = "quote";
+        var text = document.createElement("p");
+        text.className = "quote-text";
+        text.textContent = item.text;
+        var nick = document.createElement("p");
+        nick.className = "quote-nick";
+        nick.textContent = item.nick + (item.time ? " · " + item.time : "");
+        card.appendChild(text);
+        card.appendChild(nick);
+        salaEls.quotes.appendChild(card);
+      });
+    }
+  }
+
+  async function loadSala() {
+    try {
+      var res = await fetch("/api/encuesta");
+      var agg = await res.json();
+      if (agg && typeof agg.total === "number") updateSala(agg);
+    } catch (e) {}
+  }
+
+  function salaSummaryText(agg) {
+    var lines = ["Respuestas totales: " + agg.total];
+    SALA_POLLS.forEach(function (p) {
+      var bits = p.opts.map(function (opt) {
+        return opt[1] + ": " + ((agg[p.q] || {})[opt[0]] || 0);
+      });
+      lines.push(p.title + " — " + bits.join(" · "));
+    });
+    lines.push("");
+    lines.push("Lo que la sala le pide a la IA (pregunta abierta, con el nick de cada autor):");
+    agg.q9.forEach(function (item) {
+      lines.push("- [" + item.nick + "] " + item.text);
+    });
+    return lines.join("\n");
+  }
+
+  async function generateInforme() {
+    if (state.busy) return;
+    if (!lastAgg || !lastAgg.total) {
+      salaEls.informeBtn.textContent = "Aún no hay respuestas";
+      setTimeout(function () {
+        salaEls.informeBtn.textContent = "Fabricar el informe de la sala";
+      }, 2200);
+      return;
+    }
+    state.busy = true;
+    state.brand = null;
+    state.styleBrand = null;
+    els.makeBtn.disabled = true;
+    resetBench();
+    els.bench.hidden = false;
+    els.bench.scrollIntoView({ behavior: "smooth", block: "start" });
+    setStatus("Leyendo a la sala");
+    startTimer();
+    try {
+      await streamGeneration({
+        mode: "sala",
+        sector: "",
+        input: { sala: salaSummaryText(lastAgg), registro: registroText }
+      });
+    } catch (e) {
+      showError("El taller está saturado. Reintenta en unos segundos.");
+    }
+  }
+
+  if (salaEls.grid) {
+    var qrTarget = location.origin + "/encuesta";
+    salaEls.qrImg.src = "https://api.qrserver.com/v1/create-qr-code/?size=400x400&qzone=1&color=27-27-31&bgcolor=251-250-247&data=" + encodeURIComponent(qrTarget);
+    salaEls.url.textContent = qrTarget.replace(/^https?:\/\//, "");
+    buildSalaGrid();
+    if (DIRECTOR) {
+      salaEls.director.hidden = false;
+      wireFileInput(salaEls.registroBtn, salaEls.registroFile, salaEls.registroChip, function (text, file) {
+        registroText = text.slice(0, 6000);
+        var lines = text.split(/\r?\n/).filter(function (l) { return l.trim().length > 0; }).length;
+        salaEls.registroChip.textContent = file.name + " · " + (lines - 1) + " asistentes";
+        salaEls.registroChip.hidden = false;
+      });
+      salaEls.informeBtn.addEventListener("click", generateInforme);
+    }
+    loadSala();
+    setInterval(loadSala, 6000);
+  }
 
   loadWall();
   setInterval(loadWall, 10000);

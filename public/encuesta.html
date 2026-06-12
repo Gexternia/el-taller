@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>La encuesta · El taller</title>
+<meta name="theme-color" content="#0A0A0B" />
+<link rel="icon" type="image/svg+xml" href="assets/externia-icon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body class="js">
+
+<div class="bg-leaks" aria-hidden="true">
+  <div class="leak l1"></div>
+  <div class="leak l2"></div>
+</div>
+<div class="grain" aria-hidden="true"></div>
+
+<main class="survey">
+  <p class="eyebrow"><span class="bar"></span>Externia × AEGVE · La sala habla</p>
+  <h1 class="survey-title">Dos minutos.<br /><span class="grad-text">Tus respuestas dirigen la charla.</span></h1>
+
+  <form id="survey-form" autocomplete="off">
+
+    <div class="sq">
+      <label class="field-label" for="s-nick">1 · Tu nombre o nick</label>
+      <input class="field" type="text" id="s-nick" maxlength="30" placeholder="Como quieras aparecer en pantalla" required />
+    </div>
+
+    <div class="sq">
+      <p class="field-label">2 · ¿Sabes lo que es un prompt?</p>
+      <div class="opts" data-q="q2" data-type="single">
+        <button type="button" class="opt" data-v="a">Sí, seguro</button>
+        <button type="button" class="opt" data-v="b">Me suena, pero no lo tengo claro</button>
+        <button type="button" class="opt" data-v="c">No lo sé</button>
+      </div>
+    </div>
+
+    <div class="sq">
+      <p class="field-label">3 · ¿Usas alguna IA en tu día a día?</p>
+      <div class="opts" data-q="q3" data-type="single">
+        <button type="button" class="opt" data-v="si">Sí</button>
+        <button type="button" class="opt" data-v="no">No</button>
+      </div>
+    </div>
+
+    <div class="sq" id="sq-q4" hidden>
+      <p class="field-label">4 · ¿Qué IA usas? <span class="multi-note">elige todas las que toquen</span></p>
+      <div class="opts" data-q="q4" data-type="multi">
+        <button type="button" class="opt" data-v="chatgpt">ChatGPT</button>
+        <button type="button" class="opt" data-v="copilot">Microsoft Copilot</button>
+        <button type="button" class="opt" data-v="gemini">Gemini</button>
+        <button type="button" class="opt" data-v="perplexity">Perplexity</button>
+        <button type="button" class="opt" data-v="claude">Claude</button>
+        <button type="button" class="opt" data-v="notebooklm">NotebookLM</button>
+        <button type="button" class="opt" data-v="otra">Otra</button>
+      </div>
+    </div>
+
+    <div class="sq" id="sq-q5" hidden>
+      <p class="field-label">5 · ¿Para qué la usas? <span class="multi-note">elige todas las que toquen</span></p>
+      <div class="opts" data-q="q5" data-type="multi">
+        <button type="button" class="opt" data-v="investigar">Investigar o buscar información</button>
+        <button type="button" class="opt" data-v="traducir">Traducir textos</button>
+        <button type="button" class="opt" data-v="correos">Redactar correos</button>
+        <button type="button" class="opt" data-v="presentaciones">Hacer presentaciones</button>
+        <button type="button" class="opt" data-v="presupuestos">Hacer presupuestos</button>
+      </div>
+    </div>
+
+    <div class="sq">
+      <p class="field-label">6 · ¿Sabes qué es la IA agéntica?</p>
+      <div class="opts" data-q="q6" data-type="single">
+        <button type="button" class="opt" data-v="a">Sí, seguro</button>
+        <button type="button" class="opt" data-v="b">Me suena, pero no lo tengo claro</button>
+        <button type="button" class="opt" data-v="c">No lo sé</button>
+      </div>
+    </div>
+
+    <div class="sq">
+      <p class="field-label">7 · ¿Has creado o usado algún agente?</p>
+      <div class="opts" data-q="q7" data-type="single">
+        <button type="button" class="opt" data-v="si">Sí</button>
+        <button type="button" class="opt" data-v="no">No</button>
+      </div>
+    </div>
+
+    <div class="sq" id="sq-q8" hidden>
+      <p class="field-label">8 · ¿Para qué lo has usado? <span class="multi-note">elige todas las que toquen</span></p>
+      <div class="opts" data-q="q8" data-type="multi">
+        <button type="button" class="opt" data-v="correo">Automatizar u organizar mi correo</button>
+        <button type="button" class="opt" data-v="presentaciones">Generar presentaciones</button>
+        <button type="button" class="opt" data-v="clientes">Contacto con clientes o personas</button>
+        <button type="button" class="opt" data-v="otro">Otro</button>
+      </div>
+    </div>
+
+    <div class="sq">
+      <label class="field-label" for="s-q9">9 · ¿Qué te gustaría que hiciese la IA que todavía no puede?</label>
+      <textarea class="field field-area" id="s-q9" rows="4" maxlength="400" placeholder="O al menos, no con tu suscripción. Tu respuesta saldrá en pantalla." required></textarea>
+    </div>
+
+    <p class="survey-error" id="survey-error" hidden>Falta alguna respuesta marcada en rojo.</p>
+    <button class="btn btn-grad btn-make" type="submit" id="survey-send">Enviar a la pantalla</button>
+  </form>
+
+  <div class="survey-done" id="survey-done" hidden>
+    <p class="survey-done-big">Clavado.</p>
+    <p class="survey-done-sub">Tu respuesta ya está en la pantalla de la sala.</p>
+    <a class="btn btn-ghost" href="/#sala">Ver la sala en directo</a>
+    <button class="btn btn-ghost" type="button" id="survey-again">Corregir mi respuesta</button>
+  </div>
+
+  <p class="cierre-small survey-foot">El taller · Externia × AEGVE · A Coruña · 12.06.2026</p>
+</main>
+
+<script>
+(function () {
+  var answers = { q4: [], q5: [], q8: [] };
+
+  document.querySelectorAll(".opts").forEach(function (group) {
+    var q = group.dataset.q;
+    var multi = group.dataset.type === "multi";
+    group.querySelectorAll(".opt").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (multi) {
+          btn.classList.toggle("is-on");
+          answers[q] = Array.prototype.map.call(group.querySelectorAll(".opt.is-on"), function (b) { return b.dataset.v; });
+        } else {
+          group.querySelectorAll(".opt").forEach(function (b) { b.classList.remove("is-on"); });
+          btn.classList.add("is-on");
+          answers[q] = btn.dataset.v;
+          if (q === "q3") {
+            document.getElementById("sq-q4").hidden = btn.dataset.v !== "si";
+            document.getElementById("sq-q5").hidden = btn.dataset.v !== "si";
+          }
+          if (q === "q7") {
+            document.getElementById("sq-q8").hidden = btn.dataset.v !== "si";
+          }
+        }
+        group.classList.remove("is-missing");
+      });
+    });
+  });
+
+  var form = document.getElementById("survey-form");
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var nick = document.getElementById("s-nick").value.trim();
+    var q9 = document.getElementById("s-q9").value.trim();
+    var missing = false;
+    ["q2", "q3", "q6", "q7"].forEach(function (q) {
+      var group = document.querySelector('.opts[data-q="' + q + '"]');
+      if (!answers[q]) {
+        group.classList.add("is-missing");
+        missing = true;
+      }
+    });
+    if (!nick || q9.length < 3 || missing) {
+      document.getElementById("survey-error").hidden = false;
+      return;
+    }
+    document.getElementById("survey-error").hidden = true;
+    var btn = document.getElementById("survey-send");
+    btn.disabled = true;
+    btn.textContent = "Enviando";
+    try {
+      var res = await fetch("/api/encuesta", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nick: nick,
+          q2: answers.q2, q3: answers.q3, q4: answers.q4, q5: answers.q5,
+          q6: answers.q6, q7: answers.q7, q8: answers.q8, q9: q9
+        })
+      });
+      var json = await res.json();
+      if (!json || !json.ok) throw new Error("bad");
+      form.hidden = true;
+      document.getElementById("survey-done").hidden = false;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = "Enviar a la pantalla";
+      document.getElementById("survey-error").textContent = "No se ha podido enviar. Reintenta en unos segundos.";
+      document.getElementById("survey-error").hidden = false;
+    }
+  });
+
+  document.getElementById("survey-again").addEventListener("click", function () {
+    document.getElementById("survey-done").hidden = true;
+    form.hidden = false;
+    var btn = document.getElementById("survey-send");
+    btn.disabled = false;
+    btn.textContent = "Enviar a la pantalla";
+  });
+})();
+</script>
+</body>
+</html>
